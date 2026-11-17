@@ -10,3 +10,7 @@
 # Python cache files
 __pycache__/
 *.py[cod]
+
+# Application logs
+logs/
+*.log
