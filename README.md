@@ -1,219 +1,262 @@
-# Prompt Evaluation Lab: Measuring LLM Quality, Cost, and Latency
+# AI Interview Coach
 
-A practical AI engineering project to evaluate prompting strategies, measure their performance, and determine which approach delivers the best trade-off between accuracy, latency, and cost.
+An AI-powered interview coach built with Python and OpenAI. The application generates interview questions for experienced iOS developers, evaluates their answers, and provides structured scores and feedback.
+
+This was my first AI application, built to gain hands-on experience with object-oriented programming (OOP), LLM integration, prompt engineering, and structured AI responses.
 
 ## Overview
 
-What happens when the cost of an LLM-powered feature triples, but nobody can prove whether the additional spending has improved its output quality?
+AI Interview Coach simulates a technical interview through a command-line interface.
 
-This project investigates that problem by benchmarking multiple prompting strategies against a dataset of 120 tasks spanning arithmetic reasoning, classification, information extraction, and open-ended judgment.
+The application asks an interview question, accepts an answer from the candidate, and evaluates the response using an OpenAI language model. Each answer receives a clarity score, a correctness score, reasoning behind the evaluation, and feedback for the candidate.
 
-The goal is to move beyond intuition when choosing a prompting strategy. Instead of assuming that more sophisticated prompting produces better results, this project measures the actual impact of each approach and identifies where its additional cost is justified.
+The interview continues until the candidate chooses to exit.
 
-The final outcome is a data-driven recommendation for selecting prompting strategies across different task categories, including a cost projection for **100,000 requests per month**.
+## Features
 
-## Business Problem
-
-LLM-powered applications often use increasingly sophisticated prompting techniques to improve response quality. However, these techniques can introduce additional token consumption, latency, and inference costs.
-
-Without systematic evaluation, it is difficult to answer questions such as:
-
-- Does Chain-of-Thought prompting actually improve accuracy for the tasks that matter?
-- Is Self-Consistency worth the extra cost of generating multiple responses?
-- Does Tree-of-Thought reasoning provide enough improvement to justify its overhead?
-- Which prompting strategy offers the best balance between quality, latency, and cost?
-- What would each strategy cost at 100,000 requests per month?
-
-This project builds an evaluation pipeline to answer these questions using measured results rather than assumptions.
-
-## Project Objectives
-
-- Establish a baseline for LLM performance using a consistent evaluation harness.
-- Implement and compare multiple prompting strategies across four task families.
-- Measure token consumption, estimated API cost, response accuracy, and latency.
-- Validate structured LLM outputs using Pydantic.
-- Evaluate deterministic tasks using exact-match grading and open-ended tasks using an LLM-as-judge.
-- Analyze failure patterns to understand where each strategy succeeds or fails.
-- Calculate cost per 100 tasks and the cost per additional correct answer.
-- Identify the quality-cost trade-off and recommend a suitable strategy for each task family.
-- Extrapolate measured costs to a production workload of 100,000 requests per month.
-
-## Prompting Strategies
-
-| Strategy | Description | Primary Evaluation Goal |
-|---|---|---|
-| Baseline | A straightforward prompt without additional reasoning techniques | Establish a reference for quality, latency, and cost |
-| Chain-of-Thought (CoT) | Encourages the model to work through a task using a structured reasoning approach | Measure improvements on reasoning-intensive tasks |
-| Self-Consistency | Generates multiple candidate responses and selects an answer through majority voting | Determine whether repeated sampling improves answer reliability |
-| Tree-of-Thought (ToT) | Explores a shallow tree of candidate reasoning paths before selecting an answer | Measure whether exploring alternatives improves task performance |
-
-Each strategy is evaluated against the same benchmark wherever applicable. Model versions, parameters, and other relevant settings should be kept consistent to support a fair comparison.
-
-## Evaluation Methodology
-
-### 1. Benchmark Dataset
-
-Use a benchmark of 120 tasks covering four task families:
-
-- **Arithmetic reasoning:** Problems requiring numerical reasoning and correct calculations.
-- **Classification:** Assigning an input to the appropriate category.
-- **Information extraction:** Extracting specific information from unstructured inputs.
-- **Open-ended judgment:** Evaluating responses that require qualitative assessment.
-
-Results are tracked by task family so that improvements on one type of task do not hide regressions on another.
-
-### 2. Evaluation Harness
-
-Build a reusable Python evaluation pipeline that runs the same benchmark across the different prompting strategies.
-
-The harness captures relevant information for each execution, including:
-
-- Task identifier and task family
-- Prompting strategy and model configuration
-- Model response and parsed output
-- Input and output token counts
-- Estimated API cost
-- Execution latency
-- Grading result and error details
-
-This makes it possible to compare strategies consistently and investigate individual failures.
-
-### 3. Structured Output Validation
-
-Use **Pydantic** to define and validate expected response schemas.
-
-Schema validation helps detect malformed responses, missing fields, invalid data types, and other output-formatting problems. Invalid responses are recorded as evaluation outcomes rather than silently accepted.
-
-### 4. Automated Grading
-
-Use two complementary evaluation methods:
-
-**Exact-match grading**
-
-For tasks with deterministic answers, compare the model output against the expected answer using a task-appropriate normalization and comparison procedure.
-
-**LLM-as-judge**
-
-For open-ended tasks, use a separate evaluation prompt to assess responses against explicit grading criteria. Validate the judge's output, record its reasoning or evidence where appropriate, and test the judging process against manually reviewed examples to identify inconsistent evaluations.
-
-These approaches provide a consistent way to evaluate both deterministic and qualitative tasks while making their limitations visible.
-
-### 5. Cost and Performance Analysis
-
-Aggregate the benchmark results to calculate:
-
-- Accuracy by prompting strategy and task family
-- Total and average token consumption
-- Estimated cost per 100 tasks
-- Average and percentile latency, where sufficient measurements are available
-- Cost per additional correct answer
-- Projected monthly cost at 100,000 requests
-
-Monthly estimates should state their assumptions, including the expected distribution of task types, model pricing, and whether repeated model calls are included.
-
-### 6. Quality-Cost Trade-off
-
-Plot a Pareto frontier comparing accuracy against cost.
-
-A strategy is Pareto-dominated when another strategy achieves at least as much accuracy for no greater cost, with a strict improvement in at least one of those dimensions.
-
-This analysis helps identify the strategies that offer competitive quality-cost trade-offs instead of simply selecting the most accurate or least expensive option.
-
-## Key Performance Metrics
-
-| Metric | Purpose |
-|---|---|
-| Accuracy | Measures how often the model produces an acceptable answer |
-| Token usage | Measures prompt and response token consumption |
-| Estimated cost | Quantifies the expected inference expense |
-| Latency | Measures the time needed to produce a response |
-| Cost per 100 tasks | Enables direct comparison of evaluation costs |
-| Cost per additional correct answer | Measures the incremental expense associated with improved accuracy |
-| Monthly projected cost | Estimates the financial impact at 100,000 requests |
-| Failure distribution | Reveals common errors and task-specific weaknesses |
-
-For the cost-per-additional-correct-answer metric, compare each strategy with the baseline:
-
-**Incremental cost per additional correct answer**
-
-`(Strategy cost - Baseline cost) / (Strategy correct answers - Baseline correct answers)`
-
-This metric is meaningful when the strategy produces more correct answers than the baseline. If it does not, report the result separately rather than forcing a misleading value.
+- **AI-generated interview questions:** Generates short interview questions for experienced iOS developers using a predefined system prompt.
+- **Question history:** Tracks previously asked questions during the session and includes them in subsequent prompts to discourage repetition.
+- **Automated answer evaluation:** Evaluates candidate answers using an LLM.
+- **Structured scoring:** Produces clarity and correctness scores on a scale of 1 to 5, along with reasoning and feedback.
+- **OpenAI tool calling:** Uses a defined function tool to request structured evaluation data from the model.
+- **Data validation:** Uses Pydantic to define the expected evaluation structure and enforce score boundaries.
+- **API connection validation:** Checks OpenAI API connectivity during application startup.
+- **Logging:** Writes application logs to a file and displays them in the terminal.
+- **Environment-based configuration:** Loads the OpenAI API key from a local `.env` file.
+- **Python project management:** Uses `uv` to manage the project environment, dependencies, and execution.
 
 ## Technology Stack
 
-- **Python:** Evaluation orchestration and experiment logic
-- **OpenAI API / Anthropic API:** LLM inference, depending on the configured provider
-- **tiktoken:** Token counting for supported tokenization schemes
-- **Pydantic:** Structured output schemas and validation
-- **Pandas:** Benchmark results, aggregation, and analysis
-- **Matplotlib / Seaborn:** Accuracy-cost comparisons and visualizations
-- **JSONL:** Benchmark inputs and experiment records
-- **Git & GitHub:** Version control and project documentation
+| Technology | Purpose |
+|---|---|
+| Python 3.13+ | Application development |
+| OpenAI API | Interview question generation and answer evaluation |
+| GPT-4o mini | Language model used for the interview workflow |
+| OpenAI Python SDK | API client and chat completion requests |
+| Pydantic | Data modelling, JSON schema generation, and validation |
+| python-dotenv | Loading environment variables |
+| uv | Dependency and project management |
+| Git and GitHub | Version control and source code hosting |
 
-Token counts and prices should be calculated using the appropriate model-specific configuration. Actual billing can differ from estimates, so projected costs should be treated as estimates rather than invoices.
+## Project Structure
 
-## Expected Deliverables
+```text
+ai_interview_coach/
+├── src/
+│   └── ai_interview_coach/
+│       ├── main.py
+│       ├── openai_service.py
+│       ├── interview_session.py
+│       ├── scoring_tool.py
+│       └── answer_score.py
+├── .gitignore
+├── .python-version
+├── pyproject.toml
+├── uv.lock
+└── README.md
+```
 
-The project produces the following artifacts:
+The `logs/` directory and `app.log` file are created automatically when the application starts.
 
-1. **Evaluation harness:** A repeatable pipeline for executing and grading benchmark tasks.
-2. **Comparative results:** A structured dataset containing output quality, token usage, latency, and cost.
-3. **Accuracy versus cost visualization:** A Pareto frontier comparing prompting strategies.
-4. **Failure taxonomy:** A categorized analysis of common errors, invalid outputs, and task-specific failure patterns.
-5. **Production cost projection:** An estimate of the cost of serving 100,000 requests per month.
-6. **Shipping recommendation:** A documented recommendation for each task family, supported by measured performance and explicit cost assumptions.
+### Module Responsibilities
 
-## Results and Findings
+#### `main.py`
 
-> Results will be added after the benchmark has been executed and validated.
+The main entry point of the application.
 
-### Strategy Comparison
+- Configures application logging.
+- Loads environment variables.
+- Initializes the OpenAI service.
+- Validates the API connection.
+- Runs the interactive interview loop.
+- Collects candidate answers and displays evaluation results.
 
-| Strategy | Accuracy | Cost per 100 Tasks | Avg. Latency | Monthly Cost Projection |
-|---|---:|---:|---:|---:|
-| Baseline | TBD | TBD | TBD | TBD |
-| Chain-of-Thought | TBD | TBD | TBD | TBD |
-| Self-Consistency | TBD | TBD | TBD | TBD |
-| Tree-of-Thought | TBD | TBD | TBD | TBD |
+#### `openai_service.py`
 
-### Task-Level Recommendations
+Contains the `OpenAIService` class, which manages OpenAI client initialization and API connection validation.
 
-| Task Family | Recommended Strategy | Reason |
-|---|---|---|
-| Arithmetic reasoning | TBD | Based on measured accuracy, failure patterns, and incremental cost |
-| Classification | TBD | Based on measured accuracy, latency, and cost |
-| Information extraction | TBD | Based on schema validity, extraction accuracy, and cost |
-| Open-ended judgment | TBD | Based on judge scores, qualitative review, and cost |
+It checks whether the API key is configured and validates connectivity by requesting the available model list.
 
-Replace these placeholders with actual results. Recommendations should follow the measured evidence, even when the baseline turns out to be the best option for a particular task.
+#### `interview_session.py`
 
-## What This Project Demonstrates
+Contains the `InterviewSession` class, which manages the interview workflow.
 
-This project demonstrates practical skills in:
+Its responsibilities include generating interview questions, tracking previously asked questions, submitting answers for evaluation, and validating the resulting scores.
 
-- LLM application evaluation and benchmarking
-- Prompt engineering and strategy comparison
-- API integration and token-based cost estimation
-- Structured output generation and validation
-- Automated testing and quality assessment
-- Data analysis and visualization
-- Failure analysis and evidence-based decision-making
-- Production cost modeling and technical recommendations
+#### `scoring_tool.py`
 
-The focus is not simply on making an LLM produce better answers. It is on determining **when an improvement is worth paying for** and making that decision measurable.
+Contains the `ScoringTool` class, which defines the OpenAI function-calling tool used to request a structured evaluation of candidate answers.
 
-## Future Improvements
+It uses the schema generated from the `AnswerScore` model.
 
-- Evaluate additional models and compare their quality-cost trade-offs.
-- Add repeated runs and confidence intervals to account for model variability.
-- Expand the benchmark with more representative production tasks.
-- Calibrate the LLM judge against human-reviewed samples.
-- Introduce experiment versioning and regression checks for prompt changes.
-- Build a lightweight dashboard to explore results by task family, model, and strategy.
+#### `answer_score.py`
+
+Contains the `AnswerScore` Pydantic model, which defines the expected evaluation fields and validates the clarity and correctness scores.
+
+## How It Works
+
+The application follows this workflow:
+
+1. Loads environment variables from the `.env` file.
+2. Configures logging and initializes the OpenAI client.
+3. Validates the OpenAI API connection.
+4. Generates an interview question based on the predefined system prompt.
+5. Displays the question and accepts the candidate's answer.
+6. Sends the question and answer to the LLM for evaluation.
+7. Requests structured evaluation data through OpenAI function calling.
+8. Validates the evaluation using the `AnswerScore` model.
+9. Displays the scores, reasoning, and feedback.
+10. Asks whether the candidate wants to continue the interview.
+
+Enter `Y` to continue to another question. Any other response exits the application.
+
+## Answer Evaluation
+
+Each answer is evaluated using four fields.
+
+| Field | Description |
+|---|---|
+| `reasoning` | Explains the reasoning behind the assigned scores, with a maximum of three sentences specified in the schema description |
+| `clarity` | Rates how clearly the answer is expressed, from 1 to 5 |
+| `correctness` | Rates the technical correctness of the answer, from 1 to 5 |
+| `feedback` | Provides feedback on the candidate's answer, with a maximum of three sentences specified in the schema description |
+
+The `AnswerScore` model uses Pydantic field constraints to enforce the valid score range.
+
+The model's JSON schema is used to define the parameters of the scoring tool, keeping the expected evaluation structure consistent with the application's data model.
+
+## Object-Oriented Programming
+
+The application is organized into classes with separate responsibilities rather than placing the entire implementation in a single Python script.
+
+The primary classes are:
+
+- **`OpenAIService`:** Encapsulates OpenAI client initialization and API connection validation.
+- **`InterviewSession`:** Manages the interview workflow, prompts, and question history.
+- **`ScoringTool`:** Defines the tool schema used for structured answer evaluation.
+- **`AnswerScore`:** Models and validates the evaluation data.
+
+This separation demonstrates how OOP can help organize an AI application into distinct components with clearly defined responsibilities.
+
+## Getting Started
+
+### Prerequisites
+
+Before running the application, ensure that you have:
+
+- Python 3.13 or later.
+- `uv` installed.
+- An OpenAI API key with access to the configured model.
+
+Install `uv` by following the official [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/saching11/ai_interview_coach.git
+cd ai_interview_coach
+```
+
+### 2. Install Dependencies
+
+Run the following command from the project root:
+
+```bash
+uv sync
+```
+
+This installs the project dependencies and prepares the Python environment using the project's configuration and lockfile.
+
+### 3. Configure the API Key
+
+Create a `.env` file in the project root:
+
+```env
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+Replace the placeholder with your actual OpenAI API key.
+
+The application loads the variable using `python-dotenv`.
+
+**Important:** Keep your API key private. Do not commit your `.env` file to GitHub.
+
+### 4. Run the Application
+
+Execute the registered command from the project root:
+
+```bash
+uv run ai-interview-coach
+```
+
+The application validates the API connection before starting the interview.
+
+## Example Interaction
+
+The following is an illustrative example. Actual interview questions, scores, and feedback depend on the model's responses.
+
+```text
+Starting AI Interview Coach
+
+What is the difference between a struct and a class in Swift?
+
+Enter your answer
+[Your answer here]
+
+Answer check:
+reasoning='The answer explains the main distinction...'
+clarity=4
+correctness=5
+feedback='Good explanation. Consider discussing value and reference semantics...'
+
+Do you want to continue
+Y
+
+[The next interview question is generated]
+```
+
+## Logging
+
+The application creates a `logs/` directory and writes logs to:
+
+```text
+logs/app.log
+```
+
+Logs are also displayed in the terminal.
+
+The logging configuration captures application events, including startup, OpenAI client initialization, API connection validation, and failures encountered during application setup.
+
+## Scope and Limitations
+
+- The application uses a command-line interface and does not include a web or mobile frontend.
+- The interview prompt is predefined for experienced iOS developers.
+- Question history is maintained in memory during the running session.
+- Interview evaluations depend on the language model's responses.
+- The application does not persist interview results between sessions.
 
 ## Project Status
 
-In progress.
+**Completed ✅**
 
-Final findings, visualizations, and production recommendations will be documented after the evaluation pipeline has been implemented and the benchmark results have been reviewed.
+This was my first AI application, built to gain practical experience integrating an LLM into a Python application using object-oriented programming.
+
+Through this project, I gained hands-on experience with:
+
+- Integrating an external LLM API into a Python application.
+- Writing system prompts for an AI-powered workflow.
+- Using OpenAI function calling to request structured responses.
+- Defining and validating data models with Pydantic.
+- Separating application responsibilities using OOP.
+- Managing Python dependencies and project execution with `uv`.
+- Handling environment variables, API connectivity, and application logging.
+
+The project represents my first completed step toward building practical AI-powered applications.
+
+## Author
+
+**Sachin Gotal**
+
+GitHub: [@saching11](https://github.com/saching11)
+
+Repository: [AI Interview Coach](https://github.com/saching11/ai_interview_coach)
